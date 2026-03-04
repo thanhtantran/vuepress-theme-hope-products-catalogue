@@ -150,6 +150,7 @@
 
 <script setup lang="ts">
 import { reactive, ref, computed, onMounted } from 'vue'
+import { getAuthenticatedHeaders, getSupabaseConfig } from '../utils/supabaseAuth'
 
 const props = defineProps({
   product: Object,
@@ -178,8 +179,7 @@ const form = reactive({
 
 const isEditMode = computed(() => !!props.product)
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
+const { supabaseUrl } = getSupabaseConfig()
 
 onMounted(() => {
   if (props.product) {
@@ -193,15 +193,12 @@ const handleSubmit = async () => {
 
   try {
     const url = isEditMode.value
-      ? `${SUPABASE_URL}/functions/v1/products/${form.slug}`
-      : `${SUPABASE_URL}/functions/v1/products`
+      ? `${supabaseUrl}/functions/v1/products/${form.slug}`
+      : `${supabaseUrl}/functions/v1/products`
 
     const response = await fetch(url, {
       method: isEditMode.value ? 'PUT' : 'POST',
-      headers: {
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthenticatedHeaders(true),
       body: JSON.stringify(form),
     })
 

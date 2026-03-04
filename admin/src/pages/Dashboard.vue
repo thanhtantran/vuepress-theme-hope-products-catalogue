@@ -73,6 +73,7 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
 import { RouterLink } from 'vue-router'
+import { getAuthenticatedHeaders, getSupabaseConfig } from '../utils/supabaseAuth'
 
 const loading = ref(true)
 const stats = reactive({
@@ -82,23 +83,16 @@ const stats = reactive({
 })
 const recentProducts = ref([])
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
+const { supabaseUrl } = getSupabaseConfig()
 
 const fetchStats = async () => {
   try {
     const [productsRes, categoriesRes] = await Promise.all([
-      fetch(`${SUPABASE_URL}/rest/v1/products?select=count()`, {
-        headers: {
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-          'apikey': SUPABASE_ANON_KEY,
-        },
+      fetch(`${supabaseUrl}/rest/v1/products?select=count()`, {
+        headers: getAuthenticatedHeaders(),
       }),
-      fetch(`${SUPABASE_URL}/rest/v1/categories?select=count()`, {
-        headers: {
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-          'apikey': SUPABASE_ANON_KEY,
-        },
+      fetch(`${supabaseUrl}/rest/v1/categories?select=count()`, {
+        headers: getAuthenticatedHeaders(),
       }),
     ])
 
@@ -110,12 +104,9 @@ const fetchStats = async () => {
 
     // Fetch active products
     const activeRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/products?is_active=eq.true&select=count()`,
+      `${supabaseUrl}/rest/v1/products?is_active=eq.true&select=count()`,
       {
-        headers: {
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-          'apikey': SUPABASE_ANON_KEY,
-        },
+        headers: getAuthenticatedHeaders(),
       }
     )
     const activeData = await activeRes.json()
@@ -123,12 +114,9 @@ const fetchStats = async () => {
 
     // Fetch recent products
     const recentRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/products?select=id,name,price,is_active,category:categories(name)&order=created_at.desc&limit=5`,
+      `${supabaseUrl}/rest/v1/products?select=id,name,price,is_active,category:categories(name)&order=created_at.desc&limit=5`,
       {
-        headers: {
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-          'apikey': SUPABASE_ANON_KEY,
-        },
+        headers: getAuthenticatedHeaders(),
       }
     )
     recentProducts.value = await recentRes.json()
