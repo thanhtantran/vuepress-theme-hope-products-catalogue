@@ -72,6 +72,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import ProductForm from '../components/ProductForm.vue'
+import { getAuthenticatedHeaders, getSupabaseConfig } from '../utils/supabaseAuth'
 
 const loading = ref(true)
 const showForm = ref(false)
@@ -80,18 +81,14 @@ const products = ref([])
 const categories = ref([])
 const selectedProduct = ref(null)
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
+const { supabaseUrl } = getSupabaseConfig()
 
 const fetchProducts = async () => {
   try {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/products?select=id,name,price,stock_quantity,is_active,category:categories(name)&order=created_at.desc`,
+      `${supabaseUrl}/rest/v1/products?select=id,name,price,stock_quantity,is_active,category:categories(name)&order=created_at.desc`,
       {
-        headers: {
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-          'apikey': SUPABASE_ANON_KEY,
-        },
+        headers: getAuthenticatedHeaders(),
       }
     )
     products.value = await res.json()
@@ -105,12 +102,9 @@ const fetchProducts = async () => {
 const fetchCategories = async () => {
   try {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/categories?select=id,name&order=name.asc`,
+      `${supabaseUrl}/rest/v1/categories?select=id,name&order=name.asc`,
       {
-        headers: {
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-          'apikey': SUPABASE_ANON_KEY,
-        },
+        headers: getAuthenticatedHeaders(),
       }
     )
     categories.value = await res.json()
@@ -147,12 +141,9 @@ const deleteProduct = async (id) => {
   if (!confirm('Are you sure you want to delete this product?')) return
 
   try {
-    await fetch(`${SUPABASE_URL}/rest/v1/products?id=eq.${id}`, {
+    await fetch(`${supabaseUrl}/rest/v1/products?id=eq.${id}`, {
       method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-        'apikey': SUPABASE_ANON_KEY,
-      },
+      headers: getAuthenticatedHeaders(),
     })
     successMessage.value = 'Product deleted successfully'
     setTimeout(() => {

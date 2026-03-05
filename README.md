@@ -124,6 +124,16 @@ Các route chính:
 
 Admin lưu token vào `localStorage` key `sb-auth-token` sau khi login thành công.
 
+### Thiết lập đăng nhập Supabase Auth (bắt buộc)
+
+Admin **không dùng tài khoản demo hard-code**. Bạn cần có user thật trong Supabase Auth:
+
+1. Vào **Supabase Dashboard → Authentication → Users**.  
+2. Chọn **Add user** và tạo email/password để đăng nhập admin.  
+3. Nếu project bật xác thực email, hãy xác nhận email hoặc tắt yêu cầu confirm trong phần Auth settings cho môi trường dev.
+
+> Không cần tạo thêm bảng riêng để đăng nhập. Supabase Auth dùng bảng hệ thống `auth.users`.
+
 ---
 
 ## 8) Thiết lập Supabase backend

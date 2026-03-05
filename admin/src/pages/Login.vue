@@ -42,9 +42,8 @@
       </form>
 
       <div class="login-footer">
-        <p>Demo credentials:</p>
-        <p>Email: demo@example.com</p>
-        <p>Password: demo123</p>
+        <p>Use a real Supabase Auth user account.</p>
+        <p>Create user in Supabase Dashboard → Authentication → Users.</p>
       </div>
     </div>
   </div>
@@ -53,6 +52,7 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { getSupabaseConfig } from '../utils/supabaseAuth'
 
 const router = useRouter()
 const loading = ref(false)
@@ -68,11 +68,13 @@ const handleLogin = async () => {
   error.value = ''
 
   try {
-    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+    const { supabaseUrl, supabaseAnonKey } = getSupabaseConfig()
+
+    const response = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=password`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+        'apikey': supabaseAnonKey,
       },
       body: JSON.stringify({
         email: form.email,
@@ -148,7 +150,6 @@ const handleLogin = async () => {
 
 .login-footer p {
   margin: var(--spacing-xs) 0;
-  font-family: monospace;
 }
 
 .spinner {

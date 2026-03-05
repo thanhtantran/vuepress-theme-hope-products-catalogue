@@ -66,6 +66,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import CategoryForm from '../components/CategoryForm.vue'
+import { getAuthenticatedHeaders, getSupabaseConfig } from '../utils/supabaseAuth'
 
 const loading = ref(true)
 const showForm = ref(false)
@@ -73,18 +74,14 @@ const successMessage = ref('')
 const categories = ref([])
 const selectedCategory = ref(null)
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
+const { supabaseUrl } = getSupabaseConfig()
 
 const fetchCategories = async () => {
   try {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/categories?select=id,name,slug,sort_order,parent:categories!parent_id(name)&order=sort_order.asc,name.asc`,
+      `${supabaseUrl}/rest/v1/categories?select=id,name,slug,sort_order,parent:categories!parent_id(name)&order=sort_order.asc,name.asc`,
       {
-        headers: {
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-          'apikey': SUPABASE_ANON_KEY,
-        },
+        headers: getAuthenticatedHeaders(),
       }
     )
     categories.value = await res.json()
@@ -123,12 +120,9 @@ const deleteCategory = async (id) => {
   if (!confirm('Are you sure you want to delete this category?')) return
 
   try {
-    await fetch(`${SUPABASE_URL}/rest/v1/categories?id=eq.${id}`, {
+    await fetch(`${supabaseUrl}/rest/v1/categories?id=eq.${id}`, {
       method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-        'apikey': SUPABASE_ANON_KEY,
-      },
+      headers: getAuthenticatedHeaders(),
     })
     successMessage.value = 'Category deleted successfully'
     setTimeout(() => {
