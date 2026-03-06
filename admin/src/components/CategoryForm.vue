@@ -93,6 +93,7 @@
 
 <script setup lang="ts">
 import { reactive, ref, computed, onMounted } from 'vue'
+import { getAuthenticatedHeaders, getSupabaseConfig } from '../utils/supabaseAuth'
 
 const props = defineProps({
   category: Object,
@@ -119,8 +120,7 @@ const availableParents = computed(() => {
   return props.categories.filter(cat => cat.id !== props.category?.id)
 })
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
+const { supabaseUrl } = getSupabaseConfig()
 
 onMounted(() => {
   if (props.category) {
@@ -134,14 +134,14 @@ const handleSubmit = async () => {
 
   try {
     const url = isEditMode.value
-      ? `${SUPABASE_URL}/functions/v1/categories/${form.slug}`
-      : `${SUPABASE_URL}/functions/v1/categories`
+      ? `${supabaseUrl}/rest/v1/categories?id=eq.${props.category?.id}`
+      : `${supabaseUrl}/rest/v1/categories`
 
     const response = await fetch(url, {
-      method: isEditMode.value ? 'PUT' : 'POST',
+      method: isEditMode.value ? 'PATCH' : 'POST',
       headers: {
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-        'Content-Type': 'application/json',
+        ...getAuthenticatedHeaders(true),
+        'Prefer': 'return=representation',
       },
       body: JSON.stringify(form),
     })
