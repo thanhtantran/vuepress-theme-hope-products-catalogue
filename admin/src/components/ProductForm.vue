@@ -202,6 +202,12 @@ const handleSubmit = async () => {
         ...getAuthenticatedHeaders(true),
         'Prefer': 'return=representation',
       },
+      ? `${supabaseUrl}/functions/v1/products/${form.slug}`
+      : `${supabaseUrl}/functions/v1/products`
+
+    const response = await fetch(url, {
+      method: isEditMode.value ? 'PUT' : 'POST',
+      headers: getAuthenticatedHeaders(true),
       body: JSON.stringify(form),
     })
 
