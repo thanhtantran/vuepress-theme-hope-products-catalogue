@@ -193,6 +193,15 @@ const handleSubmit = async () => {
 
   try {
     const url = isEditMode.value
+      ? `${supabaseUrl}/rest/v1/products?id=eq.${props.product?.id}`
+      : `${supabaseUrl}/rest/v1/products`
+
+    const response = await fetch(url, {
+      method: isEditMode.value ? 'PATCH' : 'POST',
+      headers: {
+        ...getAuthenticatedHeaders(true),
+        'Prefer': 'return=representation',
+      },
       ? `${supabaseUrl}/functions/v1/products/${form.slug}`
       : `${supabaseUrl}/functions/v1/products`
 

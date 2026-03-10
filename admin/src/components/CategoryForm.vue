@@ -134,6 +134,15 @@ const handleSubmit = async () => {
 
   try {
     const url = isEditMode.value
+      ? `${supabaseUrl}/rest/v1/categories?id=eq.${props.category?.id}`
+      : `${supabaseUrl}/rest/v1/categories`
+
+    const response = await fetch(url, {
+      method: isEditMode.value ? 'PATCH' : 'POST',
+      headers: {
+        ...getAuthenticatedHeaders(true),
+        'Prefer': 'return=representation',
+      },
       ? `${supabaseUrl}/functions/v1/categories/${form.slug}`
       : `${supabaseUrl}/functions/v1/categories`
 
