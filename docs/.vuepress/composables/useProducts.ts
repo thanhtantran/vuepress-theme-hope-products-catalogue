@@ -64,12 +64,22 @@ export function useProducts() {
       if (params?.limit) queryParams.append('limit', params.limit.toString());
       if (params?.offset) queryParams.append('offset', params.offset.toString());
 
-      const url = `${SUPABASE_URL}/functions/v1/products${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+      let query = 'select=id,name,slug,description,short_description,price,compare_at_price,sku,stock_quantity,featured_image,is_active,is_featured,category:categories(id,name,slug)&is_active=eq.true';
+
+      if (params?.category) query += `&category_id=in.(select id from categories where slug='${params.category}')`;
+      if (params?.featured) query += '&is_featured=eq.true';
+      if (params?.limit) query += `&limit=${params.limit}`;
+      if (params?.offset) query += `&offset=${params.offset}`;
+
+      let url = `${SUPABASE_URL}/rest/v1/products?${query}&order=created_at.desc`;
+
+      if (params?.search) {
+        url = `${SUPABASE_URL}/rest/v1/products?${query}&or=(name.ilike.%${params.search}%,description.ilike.%${params.search}%,short_description.ilike.%${params.search}%)`;
+      }
 
       const response = await fetch(url, {
         headers: {
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-          'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON_KEY,
         },
       });
 
@@ -92,12 +102,11 @@ export function useProducts() {
     error.value = null;
 
     try {
-      const url = `${SUPABASE_URL}/functions/v1/products/${slug}`;
+      const url = `${SUPABASE_URL}/rest/v1/products?slug=eq.${slug}&select=id,name,slug,description,short_description,price,compare_at_price,sku,stock_quantity,featured_image,is_active,is_featured,category:categories(id,name,slug)`;
 
       const response = await fetch(url, {
         headers: {
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-          'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON_KEY,
         },
       });
 
@@ -105,8 +114,8 @@ export function useProducts() {
         throw new Error(`Failed to fetch product: ${response.statusText}`);
       }
 
-      const product = await response.json();
-      return product;
+      const products = await response.json();
+      return products.length > 0 ? products[0] : null;
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Unknown error';
       console.error('Error fetching product:', err);
@@ -140,12 +149,11 @@ export function useCategories() {
     error.value = null;
 
     try {
-      const url = `${SUPABASE_URL}/functions/v1/categories`;
+      const url = `${SUPABASE_URL}/rest/v1/categories?select=id,name,slug,description,image_url,sort_order&order=sort_order.asc,name.asc`;
 
       const response = await fetch(url, {
         headers: {
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-          'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON_KEY,
         },
       });
 
