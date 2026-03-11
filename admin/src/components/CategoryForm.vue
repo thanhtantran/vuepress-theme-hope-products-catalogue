@@ -141,20 +141,17 @@ const handleSubmit = async () => {
       method: isEditMode.value ? 'PATCH' : 'POST',
       headers: {
         ...getAuthenticatedHeaders(true),
-        'Prefer': 'return=representation',
+        Prefer: 'return=representation',
       },
-      ? `${supabaseUrl}/functions/v1/categories/${form.slug}`
-      : `${supabaseUrl}/functions/v1/categories`
-
-    const response = await fetch(url, {
-      method: isEditMode.value ? 'PUT' : 'POST',
-      headers: getAuthenticatedHeaders(true),
       body: JSON.stringify(form),
     })
 
     if (!response.ok) {
-      const data = await response.json()
-      throw new Error(data.error || 'Failed to save category')
+      const data = await response.json().catch(() => null)
+      const message =
+        (data && (data.message || data.error || data.error_description)) ||
+        `Failed to save category (${response.status})`
+      throw new Error(message)
     }
 
     emit('save')

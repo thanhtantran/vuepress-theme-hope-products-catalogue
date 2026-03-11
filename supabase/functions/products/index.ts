@@ -75,56 +75,64 @@ Deno.serve(async (req: Request) => {
         );
       }
 
+      const categorySlug = searchParams.get("category");
+      const featured = searchParams.get("featured");
+      const active = searchParams.get("active");
+      const search = searchParams.get("search");
+
+      const limitRaw = parseInt(searchParams.get("limit") || "50");
+      const offsetRaw = parseInt(searchParams.get("offset") || "0");
+      const limit = Number.isFinite(limitRaw) && limitRaw > 0 ? Math.min(limitRaw, 200) : 50;
+      const offset = Number.isFinite(offsetRaw) && offsetRaw >= 0 ? offsetRaw : 0;
+
       let query = supabase
         .from("products")
-        .select(`
-          *,
-          category:categories(*),
-          tags:product_tag_relations(tag:product_tags(*))
-        `)
+        .select(
+          `
+            *,
+            category:categories(*),
+            tags:product_tag_relations(tag:product_tags(*))
+          `,
+          { count: "exact" }
+        )
         .order("created_at", { ascending: false });
 
-      const categorySlug = searchParams.get("category");
       if (categorySlug) {
-        const { data: category } = await supabase
+        const { data: category, error: categoryError } = await supabase
           .from("categories")
           .select("id")
           .eq("slug", categorySlug)
           .maybeSingle();
 
-        if (category) {
-          query = query.eq("category_id", category.id);
+        if (categoryError) throw categoryError;
+
+        if (!category) {
+          return new Response(
+            JSON.stringify({ data: [], count: 0 }),
+            {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            }
+          );
         }
+
+        query = query.eq("category_id", category.id);
       }
 
-      const featured = searchParams.get("featured");
       if (featured === "true") {
         query = query.eq("is_featured", true);
       }
 
-      const active = searchParams.get("active");
       if (active !== "false") {
         query = query.eq("is_active", true);
       }
 
-      const search = searchParams.get("search");
       if (search) {
         query = query.textSearch("name", search);
       }
 
-      const limit = parseInt(searchParams.get("limit") || "50");
-      const offset = parseInt(searchParams.get("offset") || "0");
       query = query.range(offset, offset + limit - 1);
 
-      const { data, error, count } = await supabase
-        .from("products")
-        .select(`
-          *,
-          category:categories(*),
-          tags:product_tag_relations(tag:product_tags(*))
-        `, { count: "exact" })
-        .order("created_at", { ascending: false })
-        .range(offset, offset + limit - 1);
+      const { data, error, count } = await query;
 
       if (error) throw error;
 
@@ -223,8 +231,10 @@ Deno.serve(async (req: Request) => {
       }
     );
   } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: message }),
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

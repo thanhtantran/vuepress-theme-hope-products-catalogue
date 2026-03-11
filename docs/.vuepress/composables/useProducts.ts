@@ -57,6 +57,10 @@ export function useProducts() {
     error.value = null;
 
     try {
+      if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+        throw new Error('Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY');
+      }
+
       const queryParams = new URLSearchParams();
       if (params?.category) queryParams.append('category', params.category);
       if (params?.featured) queryParams.append('featured', 'true');
@@ -64,31 +68,23 @@ export function useProducts() {
       if (params?.limit) queryParams.append('limit', params.limit.toString());
       if (params?.offset) queryParams.append('offset', params.offset.toString());
 
-      let query = 'select=id,name,slug,description,short_description,price,compare_at_price,sku,stock_quantity,featured_image,is_active,is_featured,category:categories(id,name,slug)&is_active=eq.true';
-
-      if (params?.category) query += `&category_id=in.(select id from categories where slug='${params.category}')`;
-      if (params?.featured) query += '&is_featured=eq.true';
-      if (params?.limit) query += `&limit=${params.limit}`;
-      if (params?.offset) query += `&offset=${params.offset}`;
-
-      let url = `${SUPABASE_URL}/rest/v1/products?${query}&order=created_at.desc`;
-
-      if (params?.search) {
-        url = `${SUPABASE_URL}/rest/v1/products?${query}&or=(name.ilike.%${params.search}%,description.ilike.%${params.search}%,short_description.ilike.%${params.search}%)`;
-      }
+      const qs = queryParams.toString();
+      const url = `${SUPABASE_URL}/functions/v1/products${qs ? `?${qs}` : ''}`;
 
       const response = await fetch(url, {
         headers: {
-          'apikey': SUPABASE_ANON_KEY,
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
         },
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch products: ${response.statusText}`);
+        const text = await response.text();
+        throw new Error(text || `Failed to fetch products (${response.status})`);
       }
 
       const result = await response.json();
-      products.value = result.data || result;
+      products.value = result?.data ?? result;
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Unknown error';
       console.error('Error fetching products:', err);
@@ -102,20 +98,26 @@ export function useProducts() {
     error.value = null;
 
     try {
-      const url = `${SUPABASE_URL}/rest/v1/products?slug=eq.${slug}&select=id,name,slug,description,short_description,price,compare_at_price,sku,stock_quantity,featured_image,is_active,is_featured,category:categories(id,name,slug)`;
+      if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+        throw new Error('Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY');
+      }
+
+      const url = `${SUPABASE_URL}/functions/v1/products/${encodeURIComponent(slug)}`;
 
       const response = await fetch(url, {
         headers: {
-          'apikey': SUPABASE_ANON_KEY,
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
         },
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch product: ${response.statusText}`);
+        const text = await response.text();
+        throw new Error(text || `Failed to fetch product (${response.status})`);
       }
 
-      const products = await response.json();
-      return products.length > 0 ? products[0] : null;
+      const product = await response.json();
+      return product ?? null;
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Unknown error';
       console.error('Error fetching product:', err);
@@ -149,19 +151,26 @@ export function useCategories() {
     error.value = null;
 
     try {
-      const url = `${SUPABASE_URL}/rest/v1/categories?select=id,name,slug,description,image_url,sort_order&order=sort_order.asc,name.asc`;
+      if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+        throw new Error('Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY');
+      }
+
+      const url = `${SUPABASE_URL}/functions/v1/categories`;
 
       const response = await fetch(url, {
         headers: {
-          'apikey': SUPABASE_ANON_KEY,
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
         },
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch categories: ${response.statusText}`);
+        const text = await response.text();
+        throw new Error(text || `Failed to fetch categories (${response.status})`);
       }
 
-      categories.value = await response.json();
+      const result = await response.json();
+      categories.value = result?.data ?? result;
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Unknown error';
       console.error('Error fetching categories:', err);

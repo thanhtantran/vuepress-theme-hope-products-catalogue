@@ -84,14 +84,21 @@ const selectedProduct = ref(null)
 const { supabaseUrl } = getSupabaseConfig()
 
 const fetchProducts = async () => {
+  loading.value = true
+
   try {
     const res = await fetch(
-      `${supabaseUrl}/rest/v1/products?select=id,name,slug,description,short_description,price,compare_at_price,sku,category_id,stock_quantity,featured_image,is_active,is_featured,category:categories(name)&order=created_at.desc`,
       `${supabaseUrl}/rest/v1/products?select=id,name,price,stock_quantity,is_active,category:categories(name)&order=created_at.desc`,
       {
         headers: getAuthenticatedHeaders(),
       }
     )
+
+    if (!res.ok) {
+      const text = await res.text()
+      throw new Error(text || `Failed to fetch products (${res.status})`)
+    }
+
     products.value = await res.json()
   } catch (err) {
     console.error('Error fetching products:', err)
